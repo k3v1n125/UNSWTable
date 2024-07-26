@@ -32,8 +32,8 @@ function calculateWeeks() {
 
     var year = endDate.getFullYear();
 
-    if(year===2024 && endDate.getMonth < 0){
-      startDate = new Date("2024-02-16");
+    if(year===2024 && endDate.getMonth > 8){
+      startDate = new Date("2024-09-09");
     }
 
     var timeDifference = endDate - startDate;
