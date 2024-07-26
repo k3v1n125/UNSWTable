@@ -1,5 +1,5 @@
 function calculateWeeks() {
-    var startDate = new Date("2023-08-27"); // Set the start date to Aug 27, 2023
+    var startDate = new Date("2024-09-09"); // Set the start date to Aug 27, 2023
     var endDate = new Date(); // Set the end date to today's date
 
     var day = endDate.getDate();
@@ -31,10 +31,6 @@ function calculateWeeks() {
     }
 
     var year = endDate.getFullYear();
-
-    if(year===2024 && endDate.getMonth > 8){
-      startDate = new Date("2024-09-09");
-    }
 
     var timeDifference = endDate - startDate;
     var weeks = 1 + Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 7));
