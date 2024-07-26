@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap');
+
+*{
+  font-family: "Merriweather", serif;
+  font-size: normal;
+  font-size: small;
+}
+table,
+    th,
+    td {
+      border: 1px solid black;
+      border-collapse: collapse;
+      text-align: center;
+      padding: 5px;
+      vertical-align: middle;
+    }
+
+body{
+  background-image: url('bongo-cat.gif');
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: 20%;
+  background-position-x: right;
+  background-position-y: 10px
+}
