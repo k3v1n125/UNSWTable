@@ -1,5 +1,5 @@
 function calculateWeeks() {
-    var startDate = new Date("2024-09-09"); // Set the start date to Aug 27, 2023
+    var startDate = new Date("2024-09-08"); // Set the start date to Aug 27, 2023
     var endDate = new Date(); // Set the end date to today's date
 
     var day = endDate.getDate();
