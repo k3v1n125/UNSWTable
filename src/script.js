@@ -31,12 +31,4 @@ function calculateWeeks() {
 
   var tableRows = document.querySelectorAll("tbody tr");
   var oddRow = tableRows[5];
-
-  function updateTableCell(row, course, room) {
-    var cell = row.querySelector("td:nth-child(3)");
-    cell.innerHTML = ""; // Clear existing content
-    cell.appendChild(document.createTextNode(course));
-    cell.appendChild(document.createElement("br"));
-    cell.appendChild(document.createTextNode(room));
-  }
 }
