@@ -1,6 +1,6 @@
 function calculateWeeks() {
-  var startDate = new Date("2025-02-16"); // Set the start date to Aug 27, 2023
-  var endDate = new Date(); // Set the end date to today's date
+  var startDate = new Date("2025-02-16");
+  var endDate = new Date();
 
   var day = endDate.getDate();
   var months = [
@@ -20,15 +20,10 @@ function calculateWeeks() {
   var daysOfWeek = ["Sunday", "Monday", "Tueday", "Wednesday", "Thursday", "Friday", "Saturday"];
   var month = months[endDate.getMonth()];
   var DATE = daysOfWeek[endDate.getDay()] + ", " + month + " " + day;
-  var mid = "";
-
-  var year = endDate.getFullYear();
 
   var timeDifference = endDate - startDate;
   var weeks = 1 + Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 7));
 
-  document.getElementById("result").innerHTML = "Week " + weeks + ", " + DATE + mid;
-
-  var tableRows = document.querySelectorAll("tbody tr");
-  var oddRow = tableRows[5];
+  document.getElementById("week").innerHTML = "Week " + weeks;
+  document.getElementById("date").innerHTML = DATE;
 }
