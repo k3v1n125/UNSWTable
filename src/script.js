@@ -1,5 +1,7 @@
 function calculateWeeks() {
   var startDate = new Date("2025-02-16");
+  // var startDate = new Date("2025-06-01");
+
   var endDate = new Date();
 
   var day = endDate.getDate();
