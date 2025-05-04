@@ -23,13 +23,20 @@ body{
   background-position-y: 10px
 }
 
+.table-container {
+  width: 100vw; /* Set width to 100% of the viewport width */
+  overflow-x: auto; /* Enable horizontal scrolling if content overflows */
+  box-sizing: border-box; /* Include padding and border in the width */
+  margin: 0; /* Remove any default margin */
+  padding: 0; /* Remove any default padding */
+}
+
 table {
   border: 1px solid black;
   border-collapse: collapse;
   text-align: center;
   padding: 5px;
   vertical-align: middle;
-  width: 100vw; /* Set width to 100% of the viewport width */
-  overflow-x: auto; /* Add horizontal scrolling if content overflows */
+  width: 100%; /* Ensure the table fits within the container */
   box-sizing: border-box; /* Include padding and border in the width */
 }
