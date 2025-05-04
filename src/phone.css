@@ -37,6 +37,6 @@ table {
   text-align: center;
   padding: 5px;
   vertical-align: middle;
-  width: 100%; /* Ensure the table fits within the container */
+  width: 99%; /* Ensure the table fits within the container */
   box-sizing: border-box; /* Include padding and border in the width */
 }
