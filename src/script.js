@@ -18,7 +18,7 @@ function calculateWeeks() {
       "November",
       "December"
   ];
-  var daysOfWeek = ["Sunday", "Monday", "Tueday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  var daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   var month = months[endDate.getMonth()];
   var DATE = daysOfWeek[endDate.getDay()] + ", " + month + " " + day;
 
