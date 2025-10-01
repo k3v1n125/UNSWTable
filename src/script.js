@@ -1,5 +1,5 @@
 function calculateWeeks() {
-  var startDate = new Date("2025-08-14");
+  var startDate = new Date("2025-09-14");
 
   var endDate = new Date();
 
@@ -28,3 +28,4 @@ function calculateWeeks() {
   document.getElementById("week").innerHTML = "Week " + weeks;
   document.getElementById("date").innerHTML = DATE;
 }
+
