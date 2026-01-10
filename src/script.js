@@ -1,10 +1,10 @@
 function calculateWeeks() {
-  var startDate = new Date("2025-09-14");
+  const startDate = new Date("2026-02-15");
 
-  var endDate = new Date();
+  const endDate = new Date();
 
-  var day = endDate.getDate();
-  var months = [
+  const day = endDate.getDate();
+  const months = [
       "January",
       "February",
       "March",
@@ -18,12 +18,12 @@ function calculateWeeks() {
       "November",
       "December"
   ];
-  var daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  var month = months[endDate.getMonth()];
-  var DATE = daysOfWeek[endDate.getDay()] + ", " + month + " " + day;
+  const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const month = months[endDate.getMonth()];
+  const DATE = daysOfWeek[endDate.getDay()] + ", " + month + " " + day;
 
-  var timeDifference = endDate - startDate;
-  var weeks = 1 + Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 7));
+  const timeDifference = endDate - startDate;
+  const weeks = 1 + Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 7));
 
   document.getElementById("week").innerHTML = "Week " + weeks;
   document.getElementById("date").innerHTML = DATE;
