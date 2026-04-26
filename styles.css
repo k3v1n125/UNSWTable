@@ -277,12 +277,12 @@ button:active,
   }
 
   .bongo-cat--desktop {
-    display: none;
+    display: none !important;
   }
 
   .bongo-cat--mobile {
-    display: block;
-    height: 1em;
+    display: inline;
+    height: 2rem;
     width: auto;
   }
 }
