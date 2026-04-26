@@ -269,6 +269,13 @@ button:active,
 @media (max-width: 760px) {
   .grid {
     grid-template-columns: repeat(2, minmax(140px, 1fr));
+    align-items: start;
+  }
+
+  .dayColumn {
+    min-height: 0;
+    height: auto;
+    align-self: start;
   }
 
   .hero {
@@ -302,5 +309,12 @@ button:active,
 @media (max-width: 430px) {
   .grid {
     grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .dayColumn {
+    min-height: 0;
+    height: auto;
+    align-self: start;
   }
 }
