@@ -29,11 +29,22 @@ body {
 }
 
 .bongo-cat {
+  pointer-events: none;
+}
+
+.bongo-cat--desktop {
   position: absolute;
   bottom: 100%;
   right: 0;
   width: calc((100% - 4 * 0.9rem) / 5);
-  pointer-events: none;
+  display: block;
+}
+
+.bongo-cat--mobile {
+  display: none;
+  height: 1em;
+  width: auto;
+  vertical-align: middle;
 }
 
 .backdrop {
@@ -50,6 +61,12 @@ body {
   width: min(1040px, calc(100% - 2rem));
   margin: 2.5rem auto 1.25rem;
   animation: rise 550ms ease-out both;
+}
+
+.hero-title-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .eyebrow {
@@ -257,6 +274,16 @@ button:active,
 
   .hero {
     margin-top: 1.6rem;
+  }
+
+  .bongo-cat--desktop {
+    display: none;
+  }
+
+  .bongo-cat--mobile {
+    display: block;
+    height: 1em;
+    width: auto;
   }
 }
 
