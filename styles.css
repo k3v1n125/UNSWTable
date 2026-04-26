@@ -148,6 +148,7 @@ button:active,
   display: grid;
   grid-template-columns: repeat(5, minmax(170px, 1fr));
   gap: 0.9rem;
+  align-items: start;
 }
 
 .dayColumn {
@@ -155,7 +156,6 @@ button:active,
   border-radius: 16px;
   background: var(--panel);
   backdrop-filter: blur(4px);
-  min-height: 230px;
   animation: rise 550ms ease-out both;
 }
 
