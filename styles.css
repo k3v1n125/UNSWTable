@@ -58,7 +58,7 @@ body {
 
 .hero {
   width: min(1040px, calc(100% - 2rem));
-  margin: 2.5rem auto 1.25rem;
+  margin: 2.5rem auto 0.5rem;
   animation: rise 550ms ease-out both;
 }
 
