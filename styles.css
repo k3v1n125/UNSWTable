@@ -42,7 +42,6 @@ body {
 
 .bongo-cat--mobile {
   display: none;
-  height: 1em;
   width: auto;
   vertical-align: middle;
 }
@@ -273,7 +272,14 @@ button:active,
   }
 
   .hero {
+    display: flex;
+    align-items: stretch;
+    gap: 0.75rem;
     margin-top: 1.6rem;
+  }
+
+  .hero-content {
+    flex: 1;
   }
 
   .bongo-cat--desktop {
@@ -281,9 +287,10 @@ button:active,
   }
 
   .bongo-cat--mobile {
-    display: inline;
-    height: 2rem;
+    display: block;
     width: auto;
+    height: 100%;
+    object-fit: contain;
   }
 }
 
