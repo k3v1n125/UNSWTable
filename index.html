@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UNSW Class Timetable</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="backdrop" aria-hidden="true"></div>
+
+    <header class="hero">
+      <p class="eyebrow">UNSW Timetable</p>
+      <h1>Class Schedule</h1>
+    </header>
+
+    <main class="container">
+      <section class="controls" aria-label="Timetable controls">
+        <input id="icsUpload" type="file" accept=".ics,text/calendar" />
+      </section>
+
+      <div class="grid-wrapper">
+        <img src="bongo-cat.gif" alt="Bongo cat" class="bongo-cat" />
+        <section class="grid" id="scheduleGrid" aria-live="polite"></section>
+      </div>
+    </main>
+
+    <template id="classCardTemplate">
+      <article class="classCard">
+        <p class="classTime"></p>
+        <h3 class="classTitle"></h3>
+        <p class="classDetail classLocation"></p>
+      </article>
+    </template>
+
+    <script src="script.js"></script>
+  </body>
+</html>
