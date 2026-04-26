@@ -273,7 +273,8 @@ button:active,
 
   .hero {
     display: flex;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: flex-start;
     gap: 0.75rem;
     margin-top: 1.6rem;
   }
@@ -289,7 +290,7 @@ button:active,
   .bongo-cat--mobile {
     display: block;
     width: auto;
-    height: 100%;
+    max-height: 5rem;
     object-fit: contain;
   }
 }
