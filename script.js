@@ -1,6 +1,10 @@
 const DAYS = ["MO", "TU", "WE", "TH", "FR"];
 const REMOTE_ICS_URL = "https://my.unsw.edu.au/cal/pttd/bdZr5B6SjC.ics";
 const CUTOFF_DATE = new Date(2026, 4, 31, 23, 59, 59);
+const MATH_LECTURE_LINKS = {
+  MATH2099: "https://moodle.telt.unsw.edu.au/course/view.php?id=97891",
+  MATH2121: "https://moodle.telt.unsw.edu.au/course/view.php?id=97909",
+};
 
 const MANUAL_EVENTS = [
   {
@@ -148,6 +152,59 @@ function normalizeTitle(title) {
     .trim();
 }
 
+function formatLocation(event) {
+  const location = event.location || "TBA";
+  const isMathLecture = /^MATH\d{4}\b/.test(event.summary || "") && /\bLecture\b/i.test(event.summary || "");
+
+  if (!isMathLecture || /\(Online\)$/.test(location)) {
+    return location;
+  }
+
+  return `${location} (Online)`;
+}
+
+function getMathLectureLink(event) {
+  const courseCode = extractCourseCode(event);
+  const isMathLecture = /^MATH\d{4}\b/.test(courseCode) && /\bLecture\b/i.test(event.summary || "");
+
+  if (!isMathLecture) {
+    return "";
+  }
+
+  return MATH_LECTURE_LINKS[courseCode] || "";
+}
+
+function buildEventContent(event, includeTime = false) {
+  const href = getMathLectureLink(event);
+  const content = href ? document.createElement("a") : document.createElement("div");
+
+  content.className = href ? "classLink" : "classContent";
+
+  if (href) {
+    content.href = href;
+  }
+
+  if (includeTime) {
+    const time = document.createElement("p");
+    time.className = "classTime";
+    time.textContent = formatTimeRange(event.start, event.end);
+    content.appendChild(time);
+  }
+
+  const title = document.createElement("h3");
+  title.className = "classTitle";
+  title.textContent = event.summary;
+
+  const location = document.createElement("p");
+  location.className = "classDetail classLocation";
+  location.textContent = formatLocation(event);
+
+  content.appendChild(title);
+  content.appendChild(location);
+
+  return content;
+}
+
 function formatTimeRange(startValue, endValue) {
   const start = parseIcsDate(startValue);
   const end = parseIcsDate(endValue);
@@ -180,6 +237,11 @@ function buildSlotCard(eventsInSlot) {
   const root = document.createElement("article");
   root.className = "classCard slotCard";
 
+  if (eventsInSlot.length === 1) {
+    root.appendChild(buildEventContent(eventsInSlot[0], true));
+    return root;
+  }
+
   const time = document.createElement("p");
   time.className = "classTime";
   time.textContent = formatTimeRange(eventsInSlot[0].start, eventsInSlot[0].end);
@@ -195,16 +257,7 @@ function buildSlotCard(eventsInSlot) {
     const slide = document.createElement("div");
     slide.className = "slotSlide";
 
-    const title = document.createElement("h3");
-    title.className = "classTitle";
-    title.textContent = event.summary;
-
-    const location = document.createElement("p");
-    location.className = "classDetail classLocation";
-    location.textContent = event.location;
-
-    slide.appendChild(title);
-    slide.appendChild(location);
+    slide.appendChild(buildEventContent(event));
     track.appendChild(slide);
   }
 
