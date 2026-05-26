@@ -182,6 +182,8 @@ function buildEventContent(event, includeTime = false) {
 
   if (href) {
     content.href = href;
+    content.target = "_blank";
+    content.rel = "noopener noreferrer";
   }
 
   if (includeTime) {
