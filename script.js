@@ -1,9 +1,11 @@
 const DAYS = ["MO", "TU", "WE", "TH", "FR"];
 const REMOTE_ICS_URL = "https://my.unsw.edu.au/cal/pttd/bdZr5B6SjC.ics";
 const CUTOFF_DATE = new Date(2026, 4, 31, 23, 59, 59);
-const MATH_LECTURE_LINKS = {
+const WEEK_1_START = new Date(2026, 4, 31);
+const LECTURE_LINKS = {
   MATH2099: "https://moodle.telt.unsw.edu.au/course/view.php?id=97891",
   MATH2121: "https://moodle.telt.unsw.edu.au/course/view.php?id=97909",
+  COMP6441: "https://moodle.telt.unsw.edu.au/course/view.php?id=99596",
 };
 
 const MANUAL_EVENTS = [
@@ -35,6 +37,60 @@ const DAY_LABELS = {
 const scheduleGrid = document.getElementById("scheduleGrid");
 const icsUpload = document.getElementById("icsUpload");
 const classCardTemplate = document.getElementById("classCardTemplate");
+const weekLabel = document.getElementById("weekLabel");
+
+function startOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function formatMonthDay(date) {
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+function getCurrentWeekNumber(today = new Date()) {
+  const dayMs = 24 * 60 * 60 * 1000;
+  const currentDay = startOfDay(today);
+  const week1Day = startOfDay(WEEK_1_START);
+
+  if (currentDay < week1Day) {
+    return null;
+  }
+
+  const diffDays = Math.floor((currentDay - week1Day) / dayMs);
+  return Math.floor(diffDays / 7) + 1;
+}
+
+function updateWeekLabel(today = new Date()) {
+  if (!weekLabel) {
+    return;
+  }
+
+  const weekNumber = getCurrentWeekNumber(today);
+  if (weekNumber === null) {
+    weekLabel.textContent = `Week 1 starts ${formatMonthDay(startOfDay(WEEK_1_START))}`;
+    return;
+  }
+
+  weekLabel.textContent = `Week ${weekNumber}`;
+}
+
+function shouldDisplayEvent(event, weekNumber) {
+  const courseCode = extractCourseCode(event);
+  const rawSummary = event.rawSummary || event.summary || "";
+  const isMath2099MondayLecture =
+    courseCode === "MATH2099" && /\bLec\s+2\s+of\s+2\b/i.test(rawSummary) && event.day === "MO";
+
+  if (isMath2099MondayLecture) {
+    return [4, 5, 9].includes(weekNumber);
+  }
+
+  const isMath2099Exam = courseCode === "MATH2099" && /\bExam\b/i.test(event.summary || "");
+  if (!isMath2099Exam) {
+    return true;
+  }
+
+  return weekNumber === 8;
+}
 
 async function loadDefaultCalendar() {
   try {
@@ -100,6 +156,7 @@ function parseIcsEvents(icsText) {
       }
 
       return {
+        rawSummary: event.SUMMARY || "Untitled class",
         summary: normalizeTitle(event.SUMMARY || "Untitled class"),
         description: event.DESCRIPTION || "",
         location: event.LOCATION || "TBA",
@@ -152,30 +209,57 @@ function normalizeTitle(title) {
     .trim();
 }
 
-function formatLocation(event) {
-  const location = event.location || "TBA";
-  const isMathLecture = /^MATH\d{4}\b/.test(event.summary || "") && /\bLecture\b/i.test(event.summary || "");
+function getDisplaySummary(event, weekNumber) {
+  const rawSummary = (event.rawSummary || event.summary || "Untitled class").trim();
+  const normalizedSummary = normalizeTitle(rawSummary);
+  const courseCode = extractCourseCode(event);
+  const isMath2099Tut1 = courseCode === "MATH2099" && /\bTut\s+1\s+of\s+2\b/i.test(rawSummary);
+  const isMath2121WednesdayLecture =
+    courseCode === "MATH2121" && event.day === "WE" && /\bLecture\b/i.test(normalizedSummary);
 
-  if (!isMathLecture || /\(Online\)$/.test(location)) {
+  if (isMath2121WednesdayLecture && [4, 7].includes(weekNumber)) {
+    return normalizedSummary.replace(/\bLecture\b/i, "Exam");
+  }
+
+  if (!isMath2099Tut1) {
+    return normalizedSummary;
+  }
+
+  if (weekNumber === 7) {
+    return rawSummary.replace(/\bTut\s+1\s+of\s+2\b/gi, "Exam");
+  }
+
+  return rawSummary.replace(/\bTut\s+1\s+of\s+2\b/gi, "Lab");
+}
+
+function formatLocation(event, displaySummary) {
+  const location = event.location || "TBA";
+  const courseCode = extractCourseCode(event);
+  const isOnlineLectureCourse = /^MATH\d{4}\b/.test(courseCode) || courseCode === "COMP6441";
+  const isOnlineLecture = isOnlineLectureCourse && /\bLecture\b/i.test(displaySummary || "");
+
+  if (!isOnlineLecture || /\(Online\)$/.test(location)) {
     return location;
   }
 
   return `${location} (Online)`;
 }
 
-function getMathLectureLink(event) {
+function getLectureLink(event, displaySummary) {
   const courseCode = extractCourseCode(event);
-  const isMathLecture = /^MATH\d{4}\b/.test(courseCode) && /\bLecture\b/i.test(event.summary || "");
+  const isExam = /\bExam\b/i.test(displaySummary || "");
+  const isLecture = /\bLecture\b/i.test(displaySummary || "");
 
-  if (!isMathLecture) {
+  if (isExam || !isLecture) {
     return "";
   }
 
-  return MATH_LECTURE_LINKS[courseCode] || "";
+  return LECTURE_LINKS[courseCode] || "";
 }
 
-function buildEventContent(event, includeTime = false) {
-  const href = getMathLectureLink(event);
+function buildEventContent(event, weekNumber, includeTime = false) {
+  const displaySummary = getDisplaySummary(event, weekNumber);
+  const href = getLectureLink(event, displaySummary);
   const content = href ? document.createElement("a") : document.createElement("div");
 
   content.className = href ? "classLink" : "classContent";
@@ -195,11 +279,11 @@ function buildEventContent(event, includeTime = false) {
 
   const title = document.createElement("h3");
   title.className = "classTitle";
-  title.textContent = event.summary;
+  title.textContent = displaySummary;
 
   const location = document.createElement("p");
   location.className = "classDetail classLocation";
-  location.textContent = formatLocation(event);
+  location.textContent = formatLocation(event, displaySummary);
 
   content.appendChild(title);
   content.appendChild(location);
@@ -235,12 +319,12 @@ function groupEventsByTimeslot(events) {
   return Array.from(slotMap.values());
 }
 
-function buildSlotCard(eventsInSlot) {
+function buildSlotCard(eventsInSlot, weekNumber) {
   const root = document.createElement("article");
   root.className = "classCard slotCard";
 
   if (eventsInSlot.length === 1) {
-    root.appendChild(buildEventContent(eventsInSlot[0], true));
+    root.appendChild(buildEventContent(eventsInSlot[0], weekNumber, true));
     return root;
   }
 
@@ -259,7 +343,7 @@ function buildSlotCard(eventsInSlot) {
     const slide = document.createElement("div");
     slide.className = "slotSlide";
 
-    slide.appendChild(buildEventContent(event));
+    slide.appendChild(buildEventContent(event, weekNumber));
     track.appendChild(slide);
   }
 
@@ -348,7 +432,13 @@ function dedupeEvents(events) {
 }
 
 function renderCalendar(icsText, sourceLabel) {
-  const parsed = dedupeEvents([...parseIcsEvents(icsText), ...MANUAL_EVENTS]);
+  const weekNumber = getCurrentWeekNumber();
+  const isNoClassWeek = weekNumber === 6;
+  const parsed = isNoClassWeek
+    ? []
+    : dedupeEvents([...parseIcsEvents(icsText), ...MANUAL_EVENTS]).filter((event) =>
+        shouldDisplayEvent(event, weekNumber),
+      );
   const groups = Object.fromEntries(DAYS.map((day) => [day, []]));
 
   for (const event of parsed) {
@@ -379,12 +469,12 @@ function renderCalendar(icsText, sourceLabel) {
     if (!groups[day].length) {
       const empty = document.createElement("p");
       empty.className = "empty";
-      empty.textContent = "No classes";
+      empty.textContent = isNoClassWeek ? "No classes this week" : "No classes";
       body.appendChild(empty);
     } else {
       const slots = groupEventsByTimeslot(groups[day]);
       for (const eventsInSlot of slots) {
-        body.appendChild(buildSlotCard(eventsInSlot));
+        body.appendChild(buildSlotCard(eventsInSlot, weekNumber));
       }
     }
 
@@ -406,3 +496,4 @@ icsUpload.addEventListener("change", async (event) => {
 });
 
 loadDefaultCalendar();
+updateWeekLabel();
