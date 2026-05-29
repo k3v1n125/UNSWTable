@@ -128,6 +128,98 @@ function buildCalendarDayCell(date, isOutsideMonth, today, weekStart, weekEnd) {
   return cell;
 }
 
+function shiftCalendarMonth(delta) {
+  renderMonthCalendar(new Date(calendarMonthCursor.getFullYear(), calendarMonthCursor.getMonth() + delta, 1));
+}
+
+function setupMonthSwipeNavigation() {
+  if (!monthCalendarGrid) {
+    return;
+  }
+
+  const minSwipeDistance = 40;
+  const axisBias = 10;
+  let startX = 0;
+  let startY = 0;
+  let tracking = false;
+
+  function begin(clientX, clientY) {
+    startX = clientX;
+    startY = clientY;
+    tracking = true;
+  }
+
+  function finish(clientX, clientY) {
+    if (!tracking) {
+      return;
+    }
+
+    tracking = false;
+    const deltaX = clientX - startX;
+    const deltaY = clientY - startY;
+
+    if (Math.abs(deltaX) < minSwipeDistance) {
+      return;
+    }
+
+    if (Math.abs(deltaX) <= Math.abs(deltaY) + axisBias) {
+      return;
+    }
+
+    shiftCalendarMonth(deltaX < 0 ? 1 : -1);
+  }
+
+  if (window.PointerEvent) {
+    monthCalendarGrid.addEventListener("pointerdown", (event) => {
+      if (event.pointerType === "mouse" && event.button !== 0) {
+        return;
+      }
+      begin(event.clientX, event.clientY);
+    });
+
+    monthCalendarGrid.addEventListener("pointerup", (event) => {
+      finish(event.clientX, event.clientY);
+    });
+
+    monthCalendarGrid.addEventListener("pointercancel", () => {
+      tracking = false;
+    });
+    return;
+  }
+
+  monthCalendarGrid.addEventListener(
+    "touchstart",
+    (event) => {
+      const touch = event.changedTouches[0];
+      if (!touch) {
+        return;
+      }
+      begin(touch.clientX, touch.clientY);
+    },
+    { passive: true },
+  );
+
+  monthCalendarGrid.addEventListener(
+    "touchend",
+    (event) => {
+      const touch = event.changedTouches[0];
+      if (!touch) {
+        return;
+      }
+      finish(touch.clientX, touch.clientY);
+    },
+    { passive: true },
+  );
+
+  monthCalendarGrid.addEventListener(
+    "touchcancel",
+    () => {
+      tracking = false;
+    },
+    { passive: true },
+  );
+}
+
 function getCurrentWeekNumber(today = new Date()) {
   const dayMs = 24 * 60 * 60 * 1000;
   const currentDay = startOfDay(today);
@@ -315,7 +407,8 @@ function getDisplaySummary(event, weekNumber) {
 
 function formatLocation(event, displaySummary) {
   const location = event.location || "TBA";
-  const courseCode = extractCourseCode(event);
+  const courseCode = extractCourseCode(event)
+  
   const isOnlineLectureCourse = /^MATH\d{4}\b/.test(courseCode) || courseCode === "COMP6441";
   const isOnlineLecture = isOnlineLectureCourse && /\bLecture\b/i.test(displaySummary || "");
 
@@ -568,13 +661,13 @@ function renderCalendar(icsText, sourceLabel) {
 
 if (prevMonthBtn) {
   prevMonthBtn.addEventListener("click", () => {
-    renderMonthCalendar(new Date(calendarMonthCursor.getFullYear(), calendarMonthCursor.getMonth() - 1, 1));
+    shiftCalendarMonth(-1);
   });
 }
 
 if (nextMonthBtn) {
   nextMonthBtn.addEventListener("click", () => {
-    renderMonthCalendar(new Date(calendarMonthCursor.getFullYear(), calendarMonthCursor.getMonth() + 1, 1));
+    shiftCalendarMonth(1);
   });
 }
 
@@ -591,3 +684,4 @@ icsUpload.addEventListener("change", async (event) => {
 loadDefaultCalendar();
 updateWeekLabel();
 renderMonthCalendar();
+setupMonthSwipeNavigation();
