@@ -404,6 +404,12 @@ button:active,
     padding-inline: 0.8rem;
   }
 
+  #prevMonthBtn,
+  #todayMonthBtn,
+  #nextMonthBtn {
+    touch-action: manipulation;
+  }
+
   .hero-content {
     flex: 1;
   }

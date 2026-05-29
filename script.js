@@ -139,24 +139,53 @@ function getCurrentMonthStart() {
   return new Date(now.getFullYear(), now.getMonth(), 1);
 }
 
-function setupMonthSwipeNavigation() {
-  if (!calendarPanel) {
+function bindButtonPress(button, action) {
+  if (!button) {
     return;
   }
 
+  button.addEventListener("click", action);
+  button.addEventListener(
+    "touchend",
+    (event) => {
+      event.preventDefault();
+      action();
+    },
+    { passive: false },
+  );
+}
+
+function setupMonthSwipeNavigation() {
+  if (!monthCalendarGrid && !calendarPanel) {
+    return;
+  }
+
+  const swipeSurface = monthCalendarGrid || calendarPanel;
   const minSwipeDistance = 40;
   const axisBias = 10;
   let startX = 0;
   let startY = 0;
+  let lastX = 0;
+  let lastY = 0;
   let tracking = false;
 
   function begin(clientX, clientY) {
     startX = clientX;
     startY = clientY;
+    lastX = clientX;
+    lastY = clientY;
     tracking = true;
   }
 
-  function finish(clientX, clientY) {
+  function move(clientX, clientY) {
+    if (!tracking) {
+      return;
+    }
+    lastX = clientX;
+    lastY = clientY;
+  }
+
+  function finish(clientX = lastX, clientY = lastY) {
     if (!tracking) {
       return;
     }
@@ -176,10 +205,10 @@ function setupMonthSwipeNavigation() {
     shiftCalendarMonth(deltaX < 0 ? 1 : -1);
   }
 
-  calendarPanel.addEventListener(
+  swipeSurface.addEventListener(
     "touchstart",
     (event) => {
-      const touch = event.changedTouches[0];
+      const touch = event.touches[0] || event.changedTouches[0];
       if (!touch) {
         return;
       }
@@ -188,11 +217,24 @@ function setupMonthSwipeNavigation() {
     { passive: true },
   );
 
-  calendarPanel.addEventListener(
+  swipeSurface.addEventListener(
+    "touchmove",
+    (event) => {
+      const touch = event.touches[0] || event.changedTouches[0];
+      if (!touch) {
+        return;
+      }
+      move(touch.clientX, touch.clientY);
+    },
+    { passive: true },
+  );
+
+  swipeSurface.addEventListener(
     "touchend",
     (event) => {
       const touch = event.changedTouches[0];
       if (!touch) {
+        finish();
         return;
       }
       finish(touch.clientX, touch.clientY);
@@ -200,7 +242,7 @@ function setupMonthSwipeNavigation() {
     { passive: true },
   );
 
-  calendarPanel.addEventListener(
+  swipeSurface.addEventListener(
     "touchcancel",
     () => {
       tracking = false;
@@ -209,7 +251,7 @@ function setupMonthSwipeNavigation() {
   );
 
   if (window.PointerEvent) {
-    calendarPanel.addEventListener("pointerdown", (event) => {
+    swipeSurface.addEventListener("pointerdown", (event) => {
       if (event.pointerType === "touch") {
         return;
       }
@@ -219,14 +261,21 @@ function setupMonthSwipeNavigation() {
       begin(event.clientX, event.clientY);
     });
 
-    calendarPanel.addEventListener("pointerup", (event) => {
+    swipeSurface.addEventListener("pointermove", (event) => {
+      if (event.pointerType === "touch") {
+        return;
+      }
+      move(event.clientX, event.clientY);
+    });
+
+    swipeSurface.addEventListener("pointerup", (event) => {
       if (event.pointerType === "touch") {
         return;
       }
       finish(event.clientX, event.clientY);
     });
 
-    calendarPanel.addEventListener("pointercancel", () => {
+    swipeSurface.addEventListener("pointercancel", () => {
       tracking = false;
     });
   }
@@ -671,23 +720,17 @@ function renderCalendar(icsText, sourceLabel) {
 
 }
 
-if (prevMonthBtn) {
-  prevMonthBtn.addEventListener("click", () => {
-    shiftCalendarMonth(-1);
-  });
-}
+bindButtonPress(prevMonthBtn, () => {
+  shiftCalendarMonth(-1);
+});
 
-if (todayMonthBtn) {
-  todayMonthBtn.addEventListener("click", () => {
-    renderMonthCalendar(getCurrentMonthStart());
-  });
-}
+bindButtonPress(todayMonthBtn, () => {
+  renderMonthCalendar(getCurrentMonthStart());
+});
 
-if (nextMonthBtn) {
-  nextMonthBtn.addEventListener("click", () => {
-    shiftCalendarMonth(1);
-  });
-}
+bindButtonPress(nextMonthBtn, () => {
+  shiftCalendarMonth(1);
+});
 
 icsUpload.addEventListener("change", async (event) => {
   const [file] = event.target.files || [];
