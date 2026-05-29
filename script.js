@@ -38,6 +38,12 @@ const scheduleGrid = document.getElementById("scheduleGrid");
 const icsUpload = document.getElementById("icsUpload");
 const classCardTemplate = document.getElementById("classCardTemplate");
 const weekLabel = document.getElementById("weekLabel");
+const monthCalendarGrid = document.getElementById("monthCalendarGrid");
+const calendarMonthLabel = document.getElementById("calendarMonthLabel");
+const prevMonthBtn = document.getElementById("prevMonthBtn");
+const nextMonthBtn = document.getElementById("nextMonthBtn");
+
+let calendarMonthCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
 function startOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -45,6 +51,81 @@ function startOfDay(date) {
 
 function formatMonthDay(date) {
   return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+function sameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function toMondayFirstWeekdayIndex(date) {
+  return (date.getDay() + 6) % 7;
+}
+
+function renderMonthCalendar(targetMonth = calendarMonthCursor) {
+  if (!monthCalendarGrid || !calendarMonthLabel) {
+    return;
+  }
+
+  const monthStart = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), 1);
+  calendarMonthCursor = monthStart;
+
+  calendarMonthLabel.textContent = monthStart.toLocaleDateString([], {
+    month: "long",
+    year: "numeric",
+  });
+
+  const year = monthStart.getFullYear();
+  const month = monthStart.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrevMonth = new Date(year, month, 0).getDate();
+  const leadingDays = toMondayFirstWeekdayIndex(monthStart);
+
+  const today = startOfDay(new Date());
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - toMondayFirstWeekdayIndex(today));
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+
+  monthCalendarGrid.innerHTML = "";
+
+  for (let i = 0; i < leadingDays; i += 1) {
+    const day = daysInPrevMonth - leadingDays + i + 1;
+    const date = new Date(year, month - 1, day);
+    monthCalendarGrid.appendChild(buildCalendarDayCell(date, true, today, weekStart, weekEnd));
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = new Date(year, month, day);
+    monthCalendarGrid.appendChild(buildCalendarDayCell(date, false, today, weekStart, weekEnd));
+  }
+
+  const totalCells = leadingDays + daysInMonth;
+  const trailingDays = (7 - (totalCells % 7 || 7)) % 7;
+
+  for (let i = 1; i <= trailingDays; i += 1) {
+    const date = new Date(year, month + 1, i);
+    monthCalendarGrid.appendChild(buildCalendarDayCell(date, true, today, weekStart, weekEnd));
+  }
+}
+
+function buildCalendarDayCell(date, isOutsideMonth, today, weekStart, weekEnd) {
+  const cell = document.createElement("div");
+  cell.className = "calendarDay";
+  cell.textContent = String(date.getDate());
+
+  if (isOutsideMonth) {
+    cell.classList.add("is-outside");
+  }
+
+  if (date >= weekStart && date <= weekEnd) {
+    cell.classList.add("is-current-week");
+  }
+
+  if (sameDay(date, today)) {
+    cell.classList.add("is-today");
+  }
+
+  return cell;
 }
 
 function getCurrentWeekNumber(today = new Date()) {
@@ -485,6 +566,18 @@ function renderCalendar(icsText, sourceLabel) {
 
 }
 
+if (prevMonthBtn) {
+  prevMonthBtn.addEventListener("click", () => {
+    renderMonthCalendar(new Date(calendarMonthCursor.getFullYear(), calendarMonthCursor.getMonth() - 1, 1));
+  });
+}
+
+if (nextMonthBtn) {
+  nextMonthBtn.addEventListener("click", () => {
+    renderMonthCalendar(new Date(calendarMonthCursor.getFullYear(), calendarMonthCursor.getMonth() + 1, 1));
+  });
+}
+
 icsUpload.addEventListener("change", async (event) => {
   const [file] = event.target.files || [];
   if (!file) {
@@ -497,3 +590,4 @@ icsUpload.addEventListener("change", async (event) => {
 
 loadDefaultCalendar();
 updateWeekLabel();
+renderMonthCalendar();

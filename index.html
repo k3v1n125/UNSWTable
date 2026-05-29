@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>UNSW Class Timetable</title>
+    <title>Class Schedule</title>
     <link rel="icon" type="image/png" href="icon.png" />
     <link rel="apple-touch-icon" href="icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,9 +22,9 @@
         <p class="subtitle" id="weekLabel" aria-live="polite"></p>
         <div class="hero-title-row">
           <h1>Class Schedule</h1>
+          <img src="bongo-cat.gif" alt="" class="bongo-cat bongo-cat--title" aria-hidden="true" />
         </div>
       </div>
-      <img src="bongo-cat.gif" alt="" class="bongo-cat bongo-cat--mobile" aria-hidden="true" />
     </header>
 
     <main class="container">
@@ -32,8 +32,25 @@
         <input id="icsUpload" type="file" accept=".ics,text/calendar" />
       </section>
 
+      <section class="calendarPanel" aria-label="Monthly calendar">
+        <div class="calendarHeader">
+          <button id="prevMonthBtn" type="button" aria-label="Go to previous month">&lt;</button>
+          <h2 id="calendarMonthLabel" class="calendarMonthLabel"></h2>
+          <button id="nextMonthBtn" type="button" aria-label="Go to next month">&gt;</button>
+        </div>
+        <div class="calendarWeekdays" aria-hidden="true">
+          <span>Mon</span>
+          <span>Tue</span>
+          <span>Wed</span>
+          <span>Thu</span>
+          <span>Fri</span>
+          <span>Sat</span>
+          <span>Sun</span>
+        </div>
+        <div class="calendarGrid" id="monthCalendarGrid" aria-live="polite"></div>
+      </section>
+
       <div class="grid-wrapper">
-        <img src="bongo-cat.gif" alt="" class="bongo-cat bongo-cat--desktop" aria-hidden="true" />
         <section class="grid" id="scheduleGrid" aria-live="polite"></section>
       </div>
     </main>

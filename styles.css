@@ -32,17 +32,9 @@ body {
   pointer-events: none;
 }
 
-.bongo-cat--desktop {
-  position: absolute;
-  bottom: 100%;
-  right: 0;
-  width: calc((100% - 4 * 0.9rem) / 5);
-  display: block;
-}
-
-.bongo-cat--mobile {
-  display: none;
-  width: auto;
+.bongo-cat--title {
+  width: clamp(70px, 8vw, 108px);
+  height: auto;
   vertical-align: middle;
 }
 
@@ -99,6 +91,81 @@ h1 {
   gap: 0.75rem;
   align-items: center;
   margin-bottom: 1rem;
+}
+
+.calendarPanel {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  backdrop-filter: blur(4px);
+  padding: 0.8rem;
+  margin-bottom: 1rem;
+  animation: rise 550ms ease-out both;
+}
+
+.calendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.65rem;
+}
+
+.calendarMonthLabel {
+  margin: 0;
+  font-size: 1rem;
+  text-align: center;
+  flex: 1;
+}
+
+.calendarWeekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.calendarWeekdays span {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.calendarDay {
+  border: 1px solid #d7e2ef;
+  border-radius: 10px;
+  min-height: 2rem;
+  display: grid;
+  place-items: center;
+  background: #ffffffd8;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.8rem;
+}
+
+.calendarDay.is-outside {
+  color: #8da1b9;
+  background: #f7fbff;
+}
+
+.calendarDay.is-current-week {
+  border-color: #bed8f6;
+  background: #ecf5ff;
+}
+
+.calendarDay.is-today {
+  border-color: #ffd88a;
+  background: #fff4dc;
+  color: #8b5d00;
+  font-weight: 700;
 }
 
 button,
@@ -294,10 +361,6 @@ button:active,
 
   .hero {
     margin: 1.2rem auto 0.15rem;
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 0.75rem;
   }
 
   .controls {
@@ -308,15 +371,8 @@ button:active,
     flex: 1;
   }
 
-  .bongo-cat--desktop {
-    display: none !important;
-  }
-
-  .bongo-cat--mobile {
-    display: block;
-    width: auto;
-    max-height: 5rem;
-    object-fit: contain;
+  .bongo-cat--title {
+    width: clamp(58px, 18vw, 86px);
   }
 }
 
