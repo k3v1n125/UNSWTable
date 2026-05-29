@@ -378,6 +378,32 @@ button:active,
     margin-bottom: 0.2rem;
   }
 
+  .calendarHeader {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "title title"
+      "left right";
+    row-gap: 0.45rem;
+  }
+
+  .calendarMonthLabel {
+    grid-area: title;
+    justify-self: center;
+  }
+
+  .calendarNavLeft {
+    grid-area: left;
+  }
+
+  #nextMonthBtn {
+    grid-area: right;
+    justify-self: end;
+  }
+
+  #todayMonthBtn {
+    padding-inline: 0.8rem;
+  }
+
   .hero-content {
     flex: 1;
   }

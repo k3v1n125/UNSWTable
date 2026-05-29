@@ -43,6 +43,7 @@ const calendarMonthLabel = document.getElementById("calendarMonthLabel");
 const prevMonthBtn = document.getElementById("prevMonthBtn");
 const todayMonthBtn = document.getElementById("todayMonthBtn");
 const nextMonthBtn = document.getElementById("nextMonthBtn");
+const calendarPanel = document.querySelector(".calendarPanel");
 
 let calendarMonthCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
@@ -133,8 +134,13 @@ function shiftCalendarMonth(delta) {
   renderMonthCalendar(new Date(calendarMonthCursor.getFullYear(), calendarMonthCursor.getMonth() + delta, 1));
 }
 
+function getCurrentMonthStart() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
 function setupMonthSwipeNavigation() {
-  if (!monthCalendarGrid) {
+  if (!calendarPanel) {
     return;
   }
 
@@ -170,25 +176,7 @@ function setupMonthSwipeNavigation() {
     shiftCalendarMonth(deltaX < 0 ? 1 : -1);
   }
 
-  if (window.PointerEvent) {
-    monthCalendarGrid.addEventListener("pointerdown", (event) => {
-      if (event.pointerType === "mouse" && event.button !== 0) {
-        return;
-      }
-      begin(event.clientX, event.clientY);
-    });
-
-    monthCalendarGrid.addEventListener("pointerup", (event) => {
-      finish(event.clientX, event.clientY);
-    });
-
-    monthCalendarGrid.addEventListener("pointercancel", () => {
-      tracking = false;
-    });
-    return;
-  }
-
-  monthCalendarGrid.addEventListener(
+  calendarPanel.addEventListener(
     "touchstart",
     (event) => {
       const touch = event.changedTouches[0];
@@ -200,7 +188,7 @@ function setupMonthSwipeNavigation() {
     { passive: true },
   );
 
-  monthCalendarGrid.addEventListener(
+  calendarPanel.addEventListener(
     "touchend",
     (event) => {
       const touch = event.changedTouches[0];
@@ -212,13 +200,36 @@ function setupMonthSwipeNavigation() {
     { passive: true },
   );
 
-  monthCalendarGrid.addEventListener(
+  calendarPanel.addEventListener(
     "touchcancel",
     () => {
       tracking = false;
     },
     { passive: true },
   );
+
+  if (window.PointerEvent) {
+    calendarPanel.addEventListener("pointerdown", (event) => {
+      if (event.pointerType === "touch") {
+        return;
+      }
+      if (event.pointerType === "mouse" && event.button !== 0) {
+        return;
+      }
+      begin(event.clientX, event.clientY);
+    });
+
+    calendarPanel.addEventListener("pointerup", (event) => {
+      if (event.pointerType === "touch") {
+        return;
+      }
+      finish(event.clientX, event.clientY);
+    });
+
+    calendarPanel.addEventListener("pointercancel", () => {
+      tracking = false;
+    });
+  }
 }
 
 function getCurrentWeekNumber(today = new Date()) {
@@ -668,7 +679,7 @@ if (prevMonthBtn) {
 
 if (todayMonthBtn) {
   todayMonthBtn.addEventListener("click", () => {
-    renderMonthCalendar(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+    renderMonthCalendar(getCurrentMonthStart());
   });
 }
 
