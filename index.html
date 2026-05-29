@@ -34,7 +34,10 @@
 
       <section class="calendarPanel" aria-label="Monthly calendar">
         <div class="calendarHeader">
-          <button id="prevMonthBtn" type="button" aria-label="Go to previous month">&lt;</button>
+          <div class="calendarNavLeft">
+            <button id="prevMonthBtn" type="button" aria-label="Go to previous month">&lt;</button>
+            <button id="todayMonthBtn" type="button" aria-label="Go to current month">Today</button>
+          </div>
           <h2 id="calendarMonthLabel" class="calendarMonthLabel"></h2>
           <button id="nextMonthBtn" type="button" aria-label="Go to next month">&gt;</button>
         </div>

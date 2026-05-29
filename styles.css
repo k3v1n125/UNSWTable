@@ -104,18 +104,28 @@ h1 {
 }
 
 .calendarHeader {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: 0.6rem;
   margin-bottom: 0.65rem;
+}
+
+.calendarNavLeft {
+  display: flex;
+  gap: 0.45rem;
+  justify-self: start;
 }
 
 .calendarMonthLabel {
   margin: 0;
   font-size: 1rem;
   text-align: center;
-  flex: 1;
+  justify-self: center;
+}
+
+#nextMonthBtn {
+  justify-self: end;
 }
 
 .calendarWeekdays {

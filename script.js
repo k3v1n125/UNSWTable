@@ -41,6 +41,7 @@ const weekLabel = document.getElementById("weekLabel");
 const monthCalendarGrid = document.getElementById("monthCalendarGrid");
 const calendarMonthLabel = document.getElementById("calendarMonthLabel");
 const prevMonthBtn = document.getElementById("prevMonthBtn");
+const todayMonthBtn = document.getElementById("todayMonthBtn");
 const nextMonthBtn = document.getElementById("nextMonthBtn");
 
 let calendarMonthCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -662,6 +663,12 @@ function renderCalendar(icsText, sourceLabel) {
 if (prevMonthBtn) {
   prevMonthBtn.addEventListener("click", () => {
     shiftCalendarMonth(-1);
+  });
+}
+
+if (todayMonthBtn) {
+  todayMonthBtn.addEventListener("click", () => {
+    renderMonthCalendar(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   });
 }
 
