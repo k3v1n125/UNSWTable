@@ -1,32 +1,23 @@
+import {
+  LECTURE_LINKS,
+  MANUAL_EVENTS,
+  formatLocation,
+  getDisplaySummary,
+  normalizeTitle,
+  shouldDisplayEvent,
+  REMOTE_ICS_URL,
+  MATH2099_WED_TUTORIAL_MAP_LINK,
+  COMP6441_WED_TUTORIAL_MAP_LINK,
+  MATH2121_FRI_TUTORIAL_MAP_LINK,
+  MATH2099_FRI_LAB_MAP_LINK,
+  MATH2121_EXAM_MAP_LINK,
+} from "./content.js";
+
 const DAYS = ["MO", "TU", "WE", "TH", "FR"];
-const REMOTE_ICS_URL = "https://my.unsw.edu.au/cal/pttd/bdZr5B6SjC.ics";
 const CUTOFF_DATE = new Date(2026, 4, 31, 23, 59, 59);
 const WEEK_1_START = new Date(2026, 4, 31);
 const TERM_END_DATE = new Date(2026, 7, 8, 23, 59, 59);
-const LECTURE_LINKS = {
-  MATH2099: "https://moodle.telt.unsw.edu.au/course/view.php?id=97891",
-  MATH2121: "https://moodle.telt.unsw.edu.au/course/view.php?id=97909",
-  COMP6441: "https://moodle.telt.unsw.edu.au/course/view.php?id=99596",
-};
 
-const MANUAL_EVENTS = [
-  {
-    summary: "COMP6441 Lecture",
-    description: "",
-    location: "E19 Patricia O'Shane 104",
-    start: "20260601T110000",
-    end: "20260601T130000",
-    day: "MO",
-  },
-  {
-    summary: "COMP6441 Lecture",
-    description: "",
-    location: "Science Theatre",
-    start: "20260602T110000",
-    end: "20260602T130000",
-    day: "TU",
-  },
-];
 const DAY_LABELS = {
   MO: "Monday",
   TU: "Tuesday",
@@ -380,24 +371,6 @@ function updateWeekLabel(today = new Date()) {
   weekLabel.textContent = `Week ${weekNumber}`;
 }
 
-function shouldDisplayEvent(event, weekNumber) {
-  const courseCode = extractCourseCode(event);
-  const rawSummary = event.rawSummary || event.summary || "";
-  const isMath2099MondayLecture =
-    courseCode === "MATH2099" && /\bLec\s+2\s+of\s+2\b/i.test(rawSummary) && event.day === "MO";
-
-  if (isMath2099MondayLecture) {
-    return [4, 5, 9].includes(weekNumber);
-  }
-
-  const isMath2099Exam = courseCode === "MATH2099" && /\bExam\b/i.test(event.summary || "");
-  if (!isMath2099Exam) {
-    return true;
-  }
-
-  return weekNumber === 8;
-}
-
 async function loadDefaultCalendar() {
   try {
     const remote = await fetch(REMOTE_ICS_URL, { cache: "no-store" });
@@ -508,52 +481,42 @@ function extractClock(value) {
   return `${match[1]}:${match[2]}`;
 }
 
-function normalizeTitle(title) {
-  return (title || "")
-    .replace(/\bLec\s+\d+\s+of\s+\d+\b/gi, "Lecture")
-    .replace(/\bTut\s+\d+\s+of\s+\d+\b/gi, "Tutorial")
-    .trim();
-}
-
-function getDisplaySummary(event, weekNumber) {
-  const rawSummary = (event.rawSummary || event.summary || "Untitled class").trim();
-  const normalizedSummary = normalizeTitle(rawSummary);
-  const courseCode = extractCourseCode(event);
-  const isMath2099Tut1 = courseCode === "MATH2099" && /\bTut\s+1\s+of\s+2\b/i.test(rawSummary);
-  const isMath2121WednesdayLecture =
-    courseCode === "MATH2121" && event.day === "WE" && /\bLecture\b/i.test(normalizedSummary);
-
-  if (isMath2121WednesdayLecture && [4, 7].includes(weekNumber)) {
-    return normalizedSummary.replace(/\bLecture\b/i, "Exam");
-  }
-
-  if (!isMath2099Tut1) {
-    return normalizedSummary;
-  }
-
-  if (weekNumber === 7) {
-    return rawSummary.replace(/\bTut\s+1\s+of\s+2\b/gi, "Exam");
-  }
-
-  return rawSummary.replace(/\bTut\s+1\s+of\s+2\b/gi, "Lab");
-}
-
-function formatLocation(event, displaySummary) {
-  const location = event.location || "TBA";
-  const courseCode = extractCourseCode(event)
-  
-  const isOnlineLectureCourse = /^MATH\d{4}\b/.test(courseCode) || courseCode === "COMP6441";
-  const isOnlineLecture = isOnlineLectureCourse && /\bLecture\b/i.test(displaySummary || "");
-
-  if (!isOnlineLecture || /\(Online\)$/.test(location)) {
-    return location;
-  }
-
-  return `${location} (Online)`;
-}
-
 function getLectureLink(event, displaySummary) {
   const courseCode = extractCourseCode(event);
+  const rawSummary = event.rawSummary || event.summary || "";
+  const isTutorialSummary = /\b(Tut|Tutorial)\b/i.test(rawSummary);
+  const isMath2099WedTutorial =
+    courseCode === "MATH2099" && event.day === "WE" && isTutorialSummary && !/\bExam\b/i.test(displaySummary || "");
+  const isComp6441WedTutorial =
+    courseCode === "COMP6441" && event.day === "WE" && isTutorialSummary && !/\bExam\b/i.test(displaySummary || "");
+  const isMath2121FriTutorial =
+    courseCode === "MATH2121" && event.day === "FR" && isTutorialSummary && !/\bExam\b/i.test(displaySummary || "");
+  const isMath2121Exam = courseCode === "MATH2121" && /\bExam\b/i.test(displaySummary || "");
+  const isMath2099FriLabOrExam =
+    courseCode === "MATH2099" &&
+    event.day === "FR" &&
+    (/\bLab\b/i.test(displaySummary || "") || /\bExam\b/i.test(displaySummary || ""));
+
+  if (isMath2099WedTutorial) {
+    return MATH2099_WED_TUTORIAL_MAP_LINK;
+  }
+
+  if (isComp6441WedTutorial) {
+    return COMP6441_WED_TUTORIAL_MAP_LINK;
+  }
+
+  if (isMath2121FriTutorial) {
+    return MATH2121_FRI_TUTORIAL_MAP_LINK;
+  }
+
+  if (isMath2121Exam) {
+    return MATH2121_EXAM_MAP_LINK;
+  }
+
+  if (isMath2099FriLabOrExam) {
+    return MATH2099_FRI_LAB_MAP_LINK;
+  }
+
   const isExam = /\bExam\b/i.test(displaySummary || "");
   const isLecture = /\bLecture\b/i.test(displaySummary || "");
 
