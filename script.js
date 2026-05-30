@@ -749,7 +749,7 @@ function clearSingleDayView() {
 
 function showCurrentWeek() {
   selectedCalendarDate = null;
-  selectedWeekReferenceDate = null;
+  selectedWeekReferenceDate = startOfDay(new Date());
   goToCurrentMonth();
   renderCalendar(latestCalendarText, latestCalendarSource);
 }
