@@ -2,6 +2,7 @@ const DAYS = ["MO", "TU", "WE", "TH", "FR"];
 const REMOTE_ICS_URL = "https://my.unsw.edu.au/cal/pttd/bdZr5B6SjC.ics";
 const CUTOFF_DATE = new Date(2026, 4, 31, 23, 59, 59);
 const WEEK_1_START = new Date(2026, 4, 31);
+const TERM_END_DATE = new Date(2026, 7, 8, 23, 59, 59);
 const LECTURE_LINKS = {
   MATH2099: "https://moodle.telt.unsw.edu.au/course/view.php?id=97891",
   MATH2121: "https://moodle.telt.unsw.edu.au/course/view.php?id=97909",
@@ -33,6 +34,7 @@ const DAY_LABELS = {
   TH: "Thursday",
   FR: "Friday",
 };
+const WEEKDAY_CODES = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
 
 const scheduleGrid = document.getElementById("scheduleGrid");
 const icsUpload = document.getElementById("icsUpload");
@@ -46,6 +48,10 @@ const nextMonthBtn = document.getElementById("nextMonthBtn");
 const calendarPanel = document.querySelector(".calendarPanel");
 
 let calendarMonthCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let selectedCalendarDate = null;
+let selectedWeekReferenceDate = null;
+let latestCalendarText = "";
+let latestCalendarSource = "";
 
 function startOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -59,8 +65,20 @@ function sameDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-function toMondayFirstWeekdayIndex(date) {
-  return (date.getDay() + 6) % 7;
+function toSundayFirstWeekdayIndex(date) {
+  return date.getDay();
+}
+
+function getDateKey(date) {
+  const d = startOfDay(date);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function getSelectedDayCode() {
+  if (!selectedCalendarDate) {
+    return "";
+  }
+  return WEEKDAY_CODES[selectedCalendarDate.getDay()] || "";
 }
 
 function renderMonthCalendar(targetMonth = calendarMonthCursor) {
@@ -80,11 +98,11 @@ function renderMonthCalendar(targetMonth = calendarMonthCursor) {
   const month = monthStart.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrevMonth = new Date(year, month, 0).getDate();
-  const leadingDays = toMondayFirstWeekdayIndex(monthStart);
+  const leadingDays = toSundayFirstWeekdayIndex(monthStart);
 
   const today = startOfDay(new Date());
   const weekStart = new Date(today);
-  weekStart.setDate(today.getDate() - toMondayFirstWeekdayIndex(today));
+  weekStart.setDate(today.getDate() - toSundayFirstWeekdayIndex(today));
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekStart.getDate() + 6);
 
@@ -114,6 +132,17 @@ function buildCalendarDayCell(date, isOutsideMonth, today, weekStart, weekEnd) {
   const cell = document.createElement("div");
   cell.className = "calendarDay";
   cell.textContent = String(date.getDate());
+  cell.tabIndex = 0;
+  cell.setAttribute("role", "button");
+  cell.setAttribute("aria-label", date.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" }));
+
+  const cellDate = startOfDay(date);
+  const cellKey = getDateKey(cellDate);
+  const selectedKey = selectedCalendarDate ? getDateKey(selectedCalendarDate) : "";
+
+  if (selectedKey && selectedKey === cellKey) {
+    cell.classList.add("is-selected");
+  }
 
   if (isOutsideMonth) {
     cell.classList.add("is-outside");
@@ -126,6 +155,28 @@ function buildCalendarDayCell(date, isOutsideMonth, today, weekStart, weekEnd) {
   if (sameDay(date, today)) {
     cell.classList.add("is-today");
   }
+
+  function applyDayFilter() {
+    if (selectedKey && selectedKey === cellKey) {
+      selectedCalendarDate = null;
+      selectedWeekReferenceDate = cellDate;
+    } else {
+      selectedCalendarDate = cellDate;
+      selectedWeekReferenceDate = cellDate;
+    }
+
+    renderMonthCalendar(calendarMonthCursor);
+    renderCalendar(latestCalendarText, latestCalendarSource);
+  }
+
+  cell.addEventListener("click", applyDayFilter);
+  cell.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+    event.preventDefault();
+    applyDayFilter();
+  });
 
   return cell;
 }
@@ -666,9 +717,45 @@ function dedupeEvents(events) {
   });
 }
 
+function clearSingleDayView() {
+  if (selectedCalendarDate) {
+    selectedWeekReferenceDate = selectedCalendarDate;
+  }
+  selectedCalendarDate = null;
+  renderMonthCalendar(calendarMonthCursor);
+  renderCalendar(latestCalendarText, latestCalendarSource);
+}
+
+function buildSingleDayHeader(titleText) {
+  const row = document.createElement("div");
+  row.className = "dayHeaderRow";
+
+  const title = document.createElement("h2");
+  title.className = "dayHeader";
+  title.textContent = titleText;
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "weekScheduleBtn";
+  button.textContent = "Week schedule";
+  button.addEventListener("click", clearSingleDayView);
+
+  row.appendChild(title);
+  row.appendChild(button);
+
+  return row;
+}
+
 function renderCalendar(icsText, sourceLabel) {
-  const weekNumber = getCurrentWeekNumber();
-  const isNoClassWeek = weekNumber === 6;
+  latestCalendarText = icsText;
+  latestCalendarSource = sourceLabel;
+
+  const referenceDate = selectedCalendarDate || selectedWeekReferenceDate || new Date();
+  const weekNumber = getCurrentWeekNumber(referenceDate);
+  const isAfterTermEnd = startOfDay(referenceDate) > startOfDay(TERM_END_DATE);
+  const isNoClassWeek = weekNumber === null || weekNumber === 6 || isAfterTermEnd;
+  const selectedDayCode = getSelectedDayCode();
+  const isSingleDayView = Boolean(selectedCalendarDate);
   const parsed = isNoClassWeek
     ? []
     : dedupeEvents([...parseIcsEvents(icsText), ...MANUAL_EVENTS]).filter((event) =>
@@ -676,7 +763,13 @@ function renderCalendar(icsText, sourceLabel) {
       );
   const groups = Object.fromEntries(DAYS.map((day) => [day, []]));
 
-  for (const event of parsed) {
+  const filteredEvents = selectedDayCode && DAYS.includes(selectedDayCode)
+    ? parsed.filter((event) => event.day === selectedDayCode)
+    : selectedDayCode
+      ? []
+      : parsed;
+
+  for (const event of filteredEvents) {
     if (!groups[event.day]) {
       continue;
     }
@@ -689,7 +782,27 @@ function renderCalendar(icsText, sourceLabel) {
 
   scheduleGrid.innerHTML = "";
 
-  for (const [index, day] of DAYS.entries()) {
+  if (isSingleDayView && selectedDayCode && !DAYS.includes(selectedDayCode)) {
+    const weekendColumn = document.createElement("section");
+    weekendColumn.className = "dayColumn";
+
+    const weekendBody = document.createElement("div");
+    weekendBody.className = "dayBody";
+
+    const empty = document.createElement("p");
+    empty.className = "empty";
+    empty.textContent = "No classes";
+    weekendBody.appendChild(empty);
+
+    weekendColumn.appendChild(buildSingleDayHeader(selectedCalendarDate.toLocaleDateString([], { weekday: "long" })));
+    weekendColumn.appendChild(weekendBody);
+    scheduleGrid.appendChild(weekendColumn);
+    return;
+  }
+
+  const daysToRender = isSingleDayView && selectedDayCode ? [selectedDayCode] : DAYS;
+
+  for (const [index, day] of daysToRender.entries()) {
     const col = document.createElement("section");
     col.className = "dayColumn";
     col.style.animationDelay = `${index * 35}ms`;
@@ -704,7 +817,7 @@ function renderCalendar(icsText, sourceLabel) {
     if (!groups[day].length) {
       const empty = document.createElement("p");
       empty.className = "empty";
-      empty.textContent = isNoClassWeek ? "No classes this week" : "No classes";
+      empty.textContent = isSingleDayView ? "No classes" : isNoClassWeek ? "No classes this week" : "No classes";
       body.appendChild(empty);
     } else {
       const slots = groupEventsByTimeslot(groups[day]);
@@ -713,7 +826,11 @@ function renderCalendar(icsText, sourceLabel) {
       }
     }
 
-    col.appendChild(title);
+    if (isSingleDayView) {
+      col.appendChild(buildSingleDayHeader(DAY_LABELS[day]));
+    } else {
+      col.appendChild(title);
+    }
     col.appendChild(body);
     scheduleGrid.appendChild(col);
   }
