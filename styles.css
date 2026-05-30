@@ -205,6 +205,11 @@ h1 {
   background: #ecf5ff;
 }
 
+.calendarDay.is-selected-week {
+  border-color: #7ca5db;
+  background: #e4efff;
+}
+
 .calendarDay.is-today {
   border-color: #ffd88a;
   background: #fff4dc;
@@ -296,6 +301,13 @@ button:active,
 }
 
 .weekScheduleBtn {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.currentWeekBtn {
   padding: 0.35rem 0.65rem;
   font-size: 0.76rem;
   letter-spacing: 0.04em;

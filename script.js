@@ -81,6 +81,21 @@ function getSelectedDayCode() {
   return WEEKDAY_CODES[selectedCalendarDate.getDay()] || "";
 }
 
+function getWeekRangeForDate(date) {
+  const base = startOfDay(date);
+  const start = new Date(base);
+  start.setDate(base.getDate() - toSundayFirstWeekdayIndex(base));
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return { start, end };
+}
+
+function isSameSundayFirstWeek(a, b) {
+  const aRange = getWeekRangeForDate(a);
+  const bRange = getWeekRangeForDate(b);
+  return aRange.start.getTime() === bRange.start.getTime();
+}
+
 function renderMonthCalendar(targetMonth = calendarMonthCursor) {
   if (!monthCalendarGrid || !calendarMonthLabel) {
     return;
@@ -101,22 +116,24 @@ function renderMonthCalendar(targetMonth = calendarMonthCursor) {
   const leadingDays = toSundayFirstWeekdayIndex(monthStart);
 
   const today = startOfDay(new Date());
-  const weekStart = new Date(today);
-  weekStart.setDate(today.getDate() - toSundayFirstWeekdayIndex(today));
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6);
+  const hasSelectedDay = Boolean(selectedCalendarDate);
+  const hasSelectedWeek = !hasSelectedDay && Boolean(selectedWeekReferenceDate);
+  const weekReferenceDate = hasSelectedWeek ? startOfDay(selectedWeekReferenceDate) : today;
+  const selectedWeekIsCurrentWeek = hasSelectedWeek && isSameSundayFirstWeek(weekReferenceDate, today);
+  const shouldMarkWeek = !hasSelectedDay && !selectedWeekIsCurrentWeek;
+  const { start: weekStart, end: weekEnd } = getWeekRangeForDate(weekReferenceDate);
 
   monthCalendarGrid.innerHTML = "";
 
   for (let i = 0; i < leadingDays; i += 1) {
     const day = daysInPrevMonth - leadingDays + i + 1;
     const date = new Date(year, month - 1, day);
-    monthCalendarGrid.appendChild(buildCalendarDayCell(date, true, today, weekStart, weekEnd));
+    monthCalendarGrid.appendChild(buildCalendarDayCell(date, true, today, weekStart, weekEnd, hasSelectedWeek, shouldMarkWeek));
   }
 
   for (let day = 1; day <= daysInMonth; day += 1) {
     const date = new Date(year, month, day);
-    monthCalendarGrid.appendChild(buildCalendarDayCell(date, false, today, weekStart, weekEnd));
+    monthCalendarGrid.appendChild(buildCalendarDayCell(date, false, today, weekStart, weekEnd, hasSelectedWeek, shouldMarkWeek));
   }
 
   const totalCells = leadingDays + daysInMonth;
@@ -124,11 +141,11 @@ function renderMonthCalendar(targetMonth = calendarMonthCursor) {
 
   for (let i = 1; i <= trailingDays; i += 1) {
     const date = new Date(year, month + 1, i);
-    monthCalendarGrid.appendChild(buildCalendarDayCell(date, true, today, weekStart, weekEnd));
+    monthCalendarGrid.appendChild(buildCalendarDayCell(date, true, today, weekStart, weekEnd, hasSelectedWeek, shouldMarkWeek));
   }
 }
 
-function buildCalendarDayCell(date, isOutsideMonth, today, weekStart, weekEnd) {
+function buildCalendarDayCell(date, isOutsideMonth, today, weekStart, weekEnd, hasSelectedWeek, shouldMarkWeek) {
   const cell = document.createElement("div");
   cell.className = "calendarDay";
   cell.textContent = String(date.getDate());
@@ -148,8 +165,8 @@ function buildCalendarDayCell(date, isOutsideMonth, today, weekStart, weekEnd) {
     cell.classList.add("is-outside");
   }
 
-  if (date >= weekStart && date <= weekEnd) {
-    cell.classList.add("is-current-week");
+  if (shouldMarkWeek && date >= weekStart && date <= weekEnd) {
+    cell.classList.add(hasSelectedWeek ? "is-selected-week" : "is-current-week");
   }
 
   if (sameDay(date, today)) {
@@ -188,6 +205,10 @@ function shiftCalendarMonth(delta) {
 function getCurrentMonthStart() {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+function goToCurrentMonth() {
+  renderMonthCalendar(getCurrentMonthStart());
 }
 
 function bindButtonPress(button, action) {
@@ -726,7 +747,14 @@ function clearSingleDayView() {
   renderCalendar(latestCalendarText, latestCalendarSource);
 }
 
-function buildSingleDayHeader(titleText) {
+function showCurrentWeek() {
+  selectedCalendarDate = null;
+  selectedWeekReferenceDate = null;
+  goToCurrentMonth();
+  renderCalendar(latestCalendarText, latestCalendarSource);
+}
+
+function buildHeaderWithButton(titleText, buttonText, onClick, buttonClassName) {
   const row = document.createElement("div");
   row.className = "dayHeaderRow";
 
@@ -736,14 +764,18 @@ function buildSingleDayHeader(titleText) {
 
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "weekScheduleBtn";
-  button.textContent = "Week schedule";
-  button.addEventListener("click", clearSingleDayView);
+  button.className = buttonClassName;
+  button.textContent = buttonText;
+  button.addEventListener("click", onClick);
 
   row.appendChild(title);
   row.appendChild(button);
 
   return row;
+}
+
+function buildSingleDayHeader(titleText) {
+  return buildHeaderWithButton(titleText, "Week schedule", clearSingleDayView, "weekScheduleBtn");
 }
 
 function renderCalendar(icsText, sourceLabel) {
@@ -756,6 +788,8 @@ function renderCalendar(icsText, sourceLabel) {
   const isNoClassWeek = weekNumber === null || weekNumber === 6 || isAfterTermEnd;
   const selectedDayCode = getSelectedDayCode();
   const isSingleDayView = Boolean(selectedCalendarDate);
+  const showCurrentWeekButton =
+    !isSingleDayView && Boolean(selectedWeekReferenceDate) && !isSameSundayFirstWeek(selectedWeekReferenceDate, new Date());
   const parsed = isNoClassWeek
     ? []
     : dedupeEvents([...parseIcsEvents(icsText), ...MANUAL_EVENTS]).filter((event) =>
@@ -828,6 +862,8 @@ function renderCalendar(icsText, sourceLabel) {
 
     if (isSingleDayView) {
       col.appendChild(buildSingleDayHeader(DAY_LABELS[day]));
+    } else if (showCurrentWeekButton && day === "MO") {
+      col.appendChild(buildHeaderWithButton(DAY_LABELS[day], "Current week", showCurrentWeek, "currentWeekBtn"));
     } else {
       col.appendChild(title);
     }
@@ -842,7 +878,7 @@ bindButtonPress(prevMonthBtn, () => {
 });
 
 bindButtonPress(todayMonthBtn, () => {
-  renderMonthCalendar(getCurrentMonthStart());
+  goToCurrentMonth();
 });
 
 bindButtonPress(nextMonthBtn, () => {
