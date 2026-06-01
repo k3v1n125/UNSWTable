@@ -349,10 +349,12 @@ button:active,
 .slotViewport {
   overflow: hidden;
   touch-action: pan-y;
+  transition: height 220ms ease;
 }
 
 .slotTrack {
   display: flex;
+  align-items: flex-start;
   transition: transform 220ms ease;
   will-change: transform;
 }

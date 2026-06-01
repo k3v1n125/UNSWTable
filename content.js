@@ -29,6 +29,14 @@ export const MANUAL_EVENTS = [
     end: "20260602T130000",
     day: "TU",
   },
+  {
+    summary: "ENGG2600 Meeting",
+    description: "",
+    location: "TBA",
+    start: "20260603T150000",
+    end: "20260603T160000",
+    day: "WE",
+  },
 ]
 
 function extractCourseCode(event) {

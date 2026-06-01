@@ -568,40 +568,118 @@ function formatTimeRange(startValue, endValue) {
     return "Time TBA";
   }
 
-  const opts = { hour: "numeric", minute: "2-digit" };
+  const opts = { hour: "2-digit", minute: "2-digit", hour12: false };
   return `${start.toLocaleTimeString([], opts)} - ${end.toLocaleTimeString([], opts)}`;
 }
 
 function groupEventsByTimeslot(events) {
-  const slotMap = new Map();
-
-  for (const event of events) {
-    const startClock = extractClock(event.start);
-    const endClock = extractClock(event.end);
-    const key = `${startClock}|${endClock}`;
-
-    if (!slotMap.has(key)) {
-      slotMap.set(key, []);
+  const sorted = [...events].sort((a, b) => {
+    if (a.start === b.start) {
+      return a.end > b.end ? 1 : -1;
     }
-    slotMap.get(key).push(event);
+    return a.start > b.start ? 1 : -1;
+  });
+  const groups = [];
+  let currentGroup = null;
+
+  for (const event of sorted) {
+    const start = parseIcsDate(event.start);
+    const end = parseIcsDate(event.end);
+
+    // Keep unparsable events visible as standalone blocks.
+    if (!start || !end) {
+      if (currentGroup) {
+        groups.push(currentGroup.events);
+        currentGroup = null;
+      }
+      groups.push([event]);
+      continue;
+    }
+
+    if (!currentGroup) {
+      currentGroup = { events: [event], start, end };
+      continue;
+    }
+
+    const isContainedByCurrentGroup = start >= currentGroup.start && end <= currentGroup.end;
+    const containsCurrentGroup = start <= currentGroup.start && end >= currentGroup.end;
+    if (!isContainedByCurrentGroup && !containsCurrentGroup) {
+      groups.push(currentGroup.events);
+      currentGroup = { events: [event], start, end };
+      continue;
+    }
+
+    currentGroup.events.push(event);
+    if (start < currentGroup.start) {
+      currentGroup.start = start;
+    }
+    if (end > currentGroup.end) {
+      currentGroup.end = end;
+    }
   }
 
-  return Array.from(slotMap.values());
+  if (currentGroup) {
+    groups.push(currentGroup.events);
+  }
+
+  return groups;
+}
+
+function sortEventsInSlot(eventsInSlot, weekNumber) {
+  return [...eventsInSlot].sort((a, b) => {
+    const aIsLecture = /\bLecture\b/i.test(getDisplaySummary(a, weekNumber));
+    const bIsLecture = /\bLecture\b/i.test(getDisplaySummary(b, weekNumber));
+
+    if (aIsLecture !== bIsLecture) {
+      return aIsLecture ? 1 : -1;
+    }
+
+    if (a.start === b.start) {
+      return a.end > b.end ? 1 : -1;
+    }
+
+    return a.start > b.start ? 1 : -1;
+  });
+}
+
+function formatMergedTimeRange(events) {
+  if (!events.length) {
+    return "Time TBA";
+  }
+
+  const parsed = events
+    .map((event) => ({ start: parseIcsDate(event.start), end: parseIcsDate(event.end) }))
+    .filter((event) => event.start && event.end);
+
+  if (!parsed.length) {
+    return formatTimeRange(events[0].start, events[0].end);
+  }
+
+  let minStart = parsed[0].start;
+  let maxEnd = parsed[0].end;
+
+  for (const event of parsed) {
+    if (event.start < minStart) {
+      minStart = event.start;
+    }
+    if (event.end > maxEnd) {
+      maxEnd = event.end;
+    }
+  }
+
+  const opts = { hour: "2-digit", minute: "2-digit", hour12: false };
+  return `${minStart.toLocaleTimeString([], opts)} - ${maxEnd.toLocaleTimeString([], opts)}`;
 }
 
 function buildSlotCard(eventsInSlot, weekNumber) {
+  const orderedEvents = sortEventsInSlot(eventsInSlot, weekNumber);
   const root = document.createElement("article");
   root.className = "classCard slotCard";
 
-  if (eventsInSlot.length === 1) {
-    root.appendChild(buildEventContent(eventsInSlot[0], weekNumber, true));
+  if (orderedEvents.length === 1) {
+    root.appendChild(buildEventContent(orderedEvents[0], weekNumber, true));
     return root;
   }
-
-  const time = document.createElement("p");
-  time.className = "classTime";
-  time.textContent = formatTimeRange(eventsInSlot[0].start, eventsInSlot[0].end);
-  root.appendChild(time);
 
   const viewport = document.createElement("div");
   viewport.className = "slotViewport";
@@ -609,18 +687,18 @@ function buildSlotCard(eventsInSlot, weekNumber) {
   const track = document.createElement("div");
   track.className = "slotTrack";
 
-  for (const event of eventsInSlot) {
+  for (const event of orderedEvents) {
     const slide = document.createElement("div");
     slide.className = "slotSlide";
 
-    slide.appendChild(buildEventContent(event, weekNumber));
+    slide.appendChild(buildEventContent(event, weekNumber, true));
     track.appendChild(slide);
   }
 
   viewport.appendChild(track);
   root.appendChild(viewport);
 
-  if (eventsInSlot.length > 1) {
+  if (orderedEvents.length > 1) {
     let index = 0;
     let startX = 0;
     let isPointerDown = false;
@@ -641,10 +719,29 @@ function buildSlotCard(eventsInSlot, weekNumber) {
     nextBtn.className = "slotNav";
     nextBtn.textContent = ">";
 
+    function syncViewportHeight() {
+      const activeSlide = track.children[index];
+      if (!activeSlide) {
+        return;
+      }
+      const measuredHeight = activeSlide.getBoundingClientRect().height || activeSlide.scrollHeight;
+      if (measuredHeight > 0) {
+        viewport.style.height = `${measuredHeight}px`;
+        return;
+      }
+
+      // If the card is not attached yet, avoid forcing 0px height.
+      viewport.style.height = "";
+    }
+
     function updateSlide(nextIndex) {
-      index = (nextIndex + eventsInSlot.length) % eventsInSlot.length;
+      index = (nextIndex + orderedEvents.length) % orderedEvents.length;
       track.style.transform = `translateX(-${index * 100}%)`;
-      indicator.textContent = `${index + 1}/${eventsInSlot.length}`;
+      indicator.textContent = `${index + 1}/${orderedEvents.length}`;
+      syncViewportHeight();
+      if (!viewport.style.height) {
+        requestAnimationFrame(syncViewportHeight);
+      }
     }
 
     prevBtn.addEventListener("click", () => updateSlide(index - 1));
