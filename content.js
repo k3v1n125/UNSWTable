@@ -32,7 +32,7 @@ export const MANUAL_EVENTS = [
   {
     summary: "ENGG2600 Meeting",
     description: "",
-    location: "TBA",
+    location: "E15 Quadrangle Building 2055",
     start: "20260603T150000",
     end: "20260603T160000",
     day: "WE",
