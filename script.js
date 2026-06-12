@@ -378,6 +378,10 @@ async function loadDefaultCalendar() {
       throw new Error(`HTTP ${remote.status}`);
     }
     const remoteText = await remote.text();
+    const regex = /Service Unavailable/i;
+    if (regex.test(remoteText)) {
+      throw new Error("Service Unavailable");
+    }
     renderCalendar(remoteText, REMOTE_ICS_URL);
   } catch (error) {
     try {
