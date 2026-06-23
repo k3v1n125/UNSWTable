@@ -39,8 +39,8 @@ const nextMonthBtn = document.getElementById("nextMonthBtn");
 const calendarPanel = document.querySelector(".calendarPanel");
 
 let calendarMonthCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-let selectedCalendarDate = null;
-let selectedWeekReferenceDate = null;
+let selectedCalendarDate = startOfDay(new Date());
+let selectedWeekReferenceDate = startOfDay(new Date());
 let latestCalendarText = "";
 let latestCalendarSource = "";
 
@@ -148,7 +148,7 @@ function buildCalendarDayCell(date, isOutsideMonth, today, weekStart, weekEnd, h
   const cellKey = getDateKey(cellDate);
   const selectedKey = selectedCalendarDate ? getDateKey(selectedCalendarDate) : "";
 
-  if (selectedKey && selectedKey === cellKey) {
+  if (selectedKey && selectedKey === cellKey && !sameDay(date, today)) {
     cell.classList.add("is-selected");
   }
 
