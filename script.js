@@ -199,7 +199,11 @@ function getCurrentMonthStart() {
 }
 
 function goToCurrentMonth() {
+  const today = startOfDay(new Date());
+  selectedCalendarDate = today;
+  selectedWeekReferenceDate = today;
   renderMonthCalendar(getCurrentMonthStart());
+  renderCalendar(latestCalendarText, latestCalendarSource);
 }
 
 function bindButtonPress(button, action) {
